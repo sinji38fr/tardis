@@ -1,0 +1,6 @@
+TARDIS application source code is licensed under the MIT License.
+
+The container image also distributes Python, Debian packages, rsnapshot, rsync,
+OpenSSH and Python libraries. Those components retain their own licenses and
+copyright notices, available in their distributions and installed package
+metadata (including /usr/share/doc inside the image).

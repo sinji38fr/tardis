@@ -1,0 +1,22 @@
+name: Tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: API and isolated SSH integration
+        run: |
+          docker build --target test -t tardis-test .
+          docker run --rm tardis-test
+      - name: Frontend navigation
+        run: |
+          node --check app/static/app.js
+          node --test tests/snapshot-paths.test.cjs
+      - name: Installation manifest
+        run: docker compose config --quiet

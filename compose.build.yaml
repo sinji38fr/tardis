@@ -1,0 +1,13 @@
+services:
+  initialize:
+    build:
+      context: .
+      target: runtime
+  web:
+    build:
+      context: .
+      target: runtime
+  worker:
+    build:
+      context: .
+      target: runtime

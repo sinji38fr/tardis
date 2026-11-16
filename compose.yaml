@@ -1,0 +1,94 @@
+services:
+  initialize:
+    image: ${TARDIS_IMAGE:-shinji38fr/tardis:1.0.0}
+    command: ["python", "-m", "app.initialize"]
+    restart: "no"
+    environment:
+      TARDIS_DATA_DIR: /data
+      TARDIS_SECRET_DIR: /secrets
+      TARDIS_PUBLIC_KEY_DIR: /public-keys
+      TARDIS_DATABASE_BACKUP_DIR: /database-backups
+    volumes:
+      - tardis_data:/data
+      - tardis_secrets:/secrets
+      - tardis_public_keys:/public-keys
+      - tardis_database_backups:/database-backups
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+  web:
+    image: ${TARDIS_IMAGE:-shinji38fr/tardis:1.0.0}
+    restart: unless-stopped
+    init: true
+    environment:
+      TARDIS_PUBLIC_URL: ${TARDIS_PUBLIC_URL:-http://localhost:8088}
+      TARDIS_DATA_DIR: /data
+      TARDIS_PUBLIC_KEY_DIR: /public-keys
+      TARDIS_AUTO_INITIALIZE: "0"
+      TARDIS_BACKUP_DIR: /backups
+      TARDIS_DATABASE_BACKUP_DIR: /database-backups
+      TARDIS_DATABASE_BACKUP_INTERVAL: ${TARDIS_DATABASE_BACKUP_INTERVAL:-3600}
+      TARDIS_DATABASE_BACKUP_KEEP: ${TARDIS_DATABASE_BACKUP_KEEP:-30}
+    ports:
+      - "${TARDIS_BIND_ADDRESS:-127.0.0.1}:${TARDIS_PORT:-8088}:8000"
+    volumes:
+      - tardis_data:/data
+      - tardis_public_keys:/public-keys:ro
+      - tardis_backups:/backups:ro
+      - tardis_database_backups:/database-backups
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+  worker:
+    image: ${TARDIS_IMAGE:-shinji38fr/tardis:1.0.0}
+    command: ["python", "-m", "app.worker"]
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 150s
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      TARDIS_PUBLIC_URL: ${TARDIS_PUBLIC_URL:-http://localhost:8088}
+      TARDIS_DATA_DIR: /data
+      TARDIS_SECRET_DIR: /secrets
+      TARDIS_PUBLIC_KEY_DIR: /public-keys
+      TARDIS_AUTO_INITIALIZE: "0"
+      TARDIS_BACKUP_DIR: /backups
+      TARDIS_DATABASE_BACKUP_DIR: /database-backups
+      TARDIS_DATABASE_BACKUP_INTERVAL: ${TARDIS_DATABASE_BACKUP_INTERVAL:-3600}
+      TARDIS_DATABASE_BACKUP_KEEP: ${TARDIS_DATABASE_BACKUP_KEEP:-30}
+      TARDIS_WEBHOOK_URL: ${TARDIS_WEBHOOK_URL:-}
+      TARDIS_WEBHOOK_SECRET: ${TARDIS_WEBHOOK_SECRET:-}
+    volumes:
+      - tardis_data:/data
+      - tardis_secrets:/secrets:ro
+      - tardis_public_keys:/public-keys:ro
+      - tardis_backups:/backups
+      - tardis_database_backups:/database-backups
+    tmpfs:
+      - /tmp:mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sqlite3,datetime; c=sqlite3.connect('/data/tardis.db'); t=c.execute(\"SELECT value FROM worker_state WHERE name='heartbeat'\").fetchone(); assert t and (datetime.datetime.now(datetime.timezone.utc)-datetime.datetime.fromisoformat(t[0])).total_seconds()<45"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  tardis_data:
+  tardis_secrets:
+  tardis_backups:
+  tardis_database_backups:
+  tardis_public_keys:

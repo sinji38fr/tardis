@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="tardis-prefix" content="{{ prefix }}">
+  <title>TARDIS · Sauvegardes</title>
+  <link rel="stylesheet" href="{{ prefix }}/static/app.css">
+  <script defer src="{{ prefix }}/static/snapshot-paths.js"></script>
+  <script defer src="{{ prefix }}/static/app.js"></script>
+</head>
+<body>
+<aside>
+  <a class="brand" href="{{ prefix }}/"><span class="brand-icon">T</span><span>TARDIS<small>TIME ARCHIVE & RECOVERY</small></span></a>
+  <p class="nav-label">ESPACE DE CONTRÔLE</p>
+  <nav aria-label="Navigation principale">
+    <button data-view="overview" class="active">Vue d’ensemble</button>
+    <button data-view="backups">Sauvegardes <span id="nav-backups">0</span></button>
+    <button data-view="servers">Serveurs <span id="nav-servers">0</span></button>
+    <button data-view="keys">Clés SSH <span id="nav-keys">0</span></button>
+    <button data-view="jobs">Exécutions</button>
+    <button data-view="snapshots">Versions</button>
+    <button data-view="database">Protection SQLite</button>
+    <button data-view="notifications">Notifications</button>
+    <button data-view="audit">Activité</button>
+  </nav>
+  <div class="sidebar-foot"><span class="dot"></span> TARDIS <small>Version 1.0 · Sauvegardes</small></div>
+</aside>
+<main>
+  <header><span>Infrastructure / <strong id="breadcrumb">Vue d’ensemble</strong></span><a href="{{ prefix }}/docs" target="_blank" rel="noopener">API REST ↗</a></header>
+  <div id="notice" role="status" aria-live="polite" hidden></div>
+  <section id="overview" class="view">
+    <div class="page-title"><div><p class="eyebrow">VOTRE MÉMOIRE D’INFRASTRUCTURE</p><h1>Chaque serveur a une histoire.</h1><p class="muted">Préparez les sauvegardes qui en conserveront chaque version.</p></div><button class="primary" data-new="backup">+ Nouvelle sauvegarde</button></div>
+    <div class="stats"><article><span>Sauvegardes configurées</span><strong id="count-backups">0</strong><small>Des configurations indépendantes</small></article><article><span>Serveurs enregistrés</span><strong id="count-servers">0</strong><small>Ajoutés manuellement</small></article><article><span>Clés SSH disponibles</span><strong id="count-keys">0</strong><small>Chiffrées au repos</small></article></div>
+    <p id="storage-status" class="muted">Mesure du stockage…</p>
+    <div class="section-head"><h2>Vos sauvegardes</h2><button class="text" data-view="backups">Tout afficher →</button></div>
+    <div id="overview-backups"></div>
+    <div class="stage"><span class="stage-icon">◷</span><div><strong id="worker-status">Vérification du worker…</strong><p id="database-status">Vérification de la protection SQLite…</p></div><span class="tag">RSNAPSHOT</span></div>
+    <div class="url-card"><span>Adresse de l’instance</span><code>{{ public_url }}</code><small>Configurable au déploiement · accès direct sans connexion</small></div>
+  </section>
+  <section id="backups" class="view" hidden><div class="page-title"><div><p class="eyebrow">CONFIGURATIONS</p><h1>Sauvegardes</h1><p class="muted">Un serveur, un login, une clé et les dossiers à conserver.</p></div><button class="primary" data-new="backup">+ Nouvelle sauvegarde</button></div><div id="backup-list"></div></section>
+  <section id="servers" class="view" hidden><div class="page-title"><div><p class="eyebrow">INFRASTRUCTURE</p><h1>Serveurs</h1><p class="muted">Vos destinations SSH, ajoutées manuellement.</p></div><button class="primary" data-new="server">+ Ajouter un serveur</button></div><div id="server-list"></div></section>
+  <section id="keys" class="view" hidden><div class="page-title"><div><p class="eyebrow">ACCÈS DISTANTS</p><h1>Clés SSH</h1><p class="muted">Importez une clé existante et attachez-la à vos sauvegardes.</p></div><button class="primary" data-new="key">+ Importer une clé</button></div><div id="key-list"></div></section>
+  <section id="audit" class="view" hidden><div class="page-title"><div><p class="eyebrow">TRAÇABILITÉ</p><h1>Activité</h1><p class="muted">Les dernières modifications de votre configuration.</p></div></div><div id="audit-list"></div></section>
+  <section id="jobs" class="view" hidden><div class="page-title"><div><p class="eyebrow">OPÉRATIONS</p><h1>Exécutions</h1><p class="muted">Collectes, tests SSH et résultats persistants.</p></div></div><div id="jobs-list"></div></section>
+  <section id="snapshots" class="view" hidden><div class="page-title"><div><p class="eyebrow">HISTORIQUE DES DONNÉES</p><h1>Versions</h1><p class="muted">Explorez une version réussie et récupérez un fichier.</p></div></div><div id="snapshot-list"></div></section>
+  <section id="database" class="view" hidden><div class="page-title"><div><p class="eyebrow">PROTECTION DE TARDIS</p><h1>Copies SQLite</h1><p class="muted">Copies cohérentes à chaud, vérifiées et conservées dans un volume distinct.</p></div><button class="primary" data-database-copy>Créer une copie maintenant</button></div><div id="copy-list" class="list"></div></section>
+  <section id="notifications" class="view" hidden><div class="page-title"><div><p class="eyebrow">ÉVÉNEMENTS</p><h1>Notifications</h1><p id="notification-status" class="muted"></p></div></div><div id="notification-list"></div></section>
+</main>
+<dialog id="editor"><form id="editor-form"><div class="dialog-head"><h2 id="editor-title"></h2><button type="button" class="close" data-close aria-label="Fermer">×</button></div><div id="editor-fields"></div><p id="form-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" data-close>Annuler</button><button type="submit" class="primary" id="save">Enregistrer</button></div></form></dialog>
+<dialog id="confirmation"><form method="dialog"><h2 id="confirm-title">Supprimer cet élément ?</h2><p id="confirm-text"></p><div class="dialog-actions"><button value="cancel">Annuler</button><button value="confirm" class="danger">Supprimer</button></div></form></dialog>
+<dialog id="log-dialog"><form method="dialog"><div class="dialog-head"><h2>Journal d’exécution</h2><button aria-label="Fermer">×</button></div></form><pre id="log-content"></pre></dialog>
+<dialog id="browser-dialog"><form method="dialog"><div class="dialog-head"><h2>Récupérer un fichier</h2><button aria-label="Fermer">×</button></div></form><p><code id="browser-path"></code></p><div id="browser-files"></div></dialog>
+<dialog id="restore-dialog"><form method="dialog"><div class="dialog-head"><h2>Restaurer sur le serveur</h2><button aria-label="Fermer">×</button></div></form><p>Source : <code id="restore-source"></code></p><form id="restore-form"><label for="restore-destination">Destination absolue sur le serveur</label><input id="restore-destination" name="destination" required placeholder="/srv/restauration/mes-fichiers"><label><input type="checkbox" name="overwrite"> Autoriser l’écrasement des fichiers concernés</label><button type="submit">Préparer l’aperçu</button></form><pre id="restore-status"></pre><button id="restore-confirm" class="danger" hidden>Confirmer et restaurer maintenant</button></dialog>
+</body>
+</html>
