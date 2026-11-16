@@ -3,6 +3,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 RUN apt-get update && apt-get install -y --no-install-recommends openssh-client rsync rsnapshot && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY requirements.txt requirements.lock ./
+COPY LICENSE NOTICE ./
 RUN pip install --no-cache-dir -r requirements.lock
 RUN useradd --uid 10001 --create-home tardis && mkdir -p /data /secrets /backups /database-backups /public-keys && chown tardis:tardis /data /secrets /backups /database-backups /public-keys
 ARG VCS_REF=unknown
